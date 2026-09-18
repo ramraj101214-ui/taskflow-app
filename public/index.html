@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TaskFlow — Simple Task Manager</title>
+  <meta name="description" content="TaskFlow: A simple, fast task manager built with HTML, CSS, JavaScript, and Node.js with SQLite." />
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-container">
+
+    <!-- Mobile Drawer Overlay -->
+    <div class="mobile-overlay" id="mobileOverlay"></div>
+
+    <!-- 🏛️ Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-logo">✓</div>
+        <h2>TaskFlow</h2>
+      </div>
+
+      <!-- Task Stats -->
+      <div class="stats-box">
+        <div class="stat">
+          <span class="stat-val" id="statTotal">0</span>
+          <span class="stat-lbl">Total</span>
+        </div>
+        <div class="stat">
+          <span class="stat-val pending" id="statPending">0</span>
+          <span class="stat-lbl">Pending</span>
+        </div>
+        <div class="stat">
+          <span class="stat-val completed" id="statCompleted">0</span>
+          <span class="stat-lbl">Done</span>
+        </div>
+      </div>
+
+      <!-- Categories Navigation -->
+      <div class="nav-group">
+        <div class="nav-group-header">
+          <span>CATEGORIES</span>
+          <button id="openAddCategoryBtn" class="icon-btn-sm" title="Add Category">+</button>
+        </div>
+        <nav class="cat-nav">
+          <a href="#" class="cat-link active" data-category="All">
+            <span class="dot" style="background:#6366f1"></span>
+            <span class="cat-name">All Tasks</span>
+            <span class="badge" id="catCountAll">0</span>
+          </a>
+          <div id="categoryListNav"></div>
+        </nav>
+      </div>
+
+      <div class="sidebar-footer">
+        <p>TaskFlow SQLite App</p>
+      </div>
+    </aside>
+
+    <!-- 🏛️ Main Content -->
+    <main class="main-body">
+      <!-- Header Bar -->
+      <header class="header-bar">
+        <div class="header-left">
+          <button class="menu-toggle" id="mobileSidebarToggle" aria-label="Toggle menu">☰</button>
+          <div>
+            <h1 id="pageTitle">Dashboard</h1>
+            <p class="subtitle">Keep track of your daily tasks and to-dos</p>
+          </div>
+        </div>
+        <button class="btn btn-primary" id="openModalBtn">+ Add Task</button>
+      </header>
+
+      <!-- 🎛️ Controls (Search & Filters) -->
+      <section class="controls-card">
+        <div class="search-wrap">
+          <input type="text" id="searchInput" placeholder="Search tasks..." />
+          <button id="clearSearchBtn" class="clear-btn" style="display:none;">&times;</button>
+        </div>
+
+        <div class="filters-wrap">
+          <div class="filter-item">
+            <label for="priorityFilter">Priority:</label>
+            <select id="priorityFilter">
+              <option value="All">All Priorities</option>
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Low">Low</option>
+            </select>
+          </div>
+
+          <div class="filter-item">
+            <label for="categoryFilter">Category:</label>
+            <select id="categoryFilter">
+              <option value="All">All Categories</option>
+            </select>
+          </div>
+
+          <div class="status-tabs" id="statusFilter">
+            <button class="tab active" data-status="All">All</button>
+            <button class="tab" data-status="pending">Pending</button>
+            <button class="tab" data-status="completed">Completed</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 📦 Task Grid -->
+      <section class="tasks-container">
+        <div class="tasks-header">
+          <span id="resultsCount">Showing 0 tasks</span>
+        </div>
+
+        <div id="taskList" class="task-grid"></div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="empty-box" style="display:none;">
+          <div class="empty-icon">📝</div>
+          <h3>No tasks found</h3>
+          <p>Create a task or change your filter search options.</p>
+          <button class="btn btn-secondary" id="emptyAddBtn">+ Add First Task</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- 📝 Add / Edit Task Modal -->
+  <div class="modal-overlay" id="taskModalBackdrop">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modalTitle">Create New Task</h3>
+        <button class="close-btn" id="closeModalBtn">&times;</button>
+      </div>
+      <form id="taskForm" class="modal-form">
+        <input type="hidden" id="taskIdInput" value="" />
+
+        <div class="form-field">
+          <label for="taskTitleInput">Task Title *</label>
+          <input type="text" id="taskTitleInput" placeholder="Enter task title" required />
+        </div>
+
+        <div class="form-field">
+          <label for="taskDescInput">Description</label>
+          <textarea id="taskDescInput" rows="3" placeholder="Optional task description..."></textarea>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="taskCategorySelect">Category</label>
+            <select id="taskCategorySelect"></select>
+          </div>
+
+          <div class="form-field">
+            <label for="taskPrioritySelect">Priority</label>
+            <select id="taskPrioritySelect">
+              <option value="High">High</option>
+              <option value="Medium" selected>Medium</option>
+              <option value="Low">Low</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="taskDueDateInput">Due Date</label>
+            <input type="date" id="taskDueDateInput" />
+          </div>
+
+          <div class="form-field" id="statusGroup" style="display:none;">
+            <label for="taskStatusSelect">Status</label>
+            <select id="taskStatusSelect">
+              <option value="pending">Pending</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="cancelModalBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Task</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 🏷️ Add Category Modal -->
+  <div class="modal-overlay" id="categoryModalBackdrop">
+    <div class="modal-box small">
+      <div class="modal-header">
+        <h3>Add Category</h3>
+        <button class="close-btn" id="closeCatModalBtn">&times;</button>
+      </div>
+      <form id="categoryForm" class="modal-form">
+        <div class="form-field">
+          <label for="catNameInput">Category Name *</label>
+          <input type="text" id="catNameInput" placeholder="Category name..." required />
+        </div>
+        <div class="form-field">
+          <label for="catColorInput">Color Badge</label>
+          <input type="color" id="catColorInput" value="#6366f1" />
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="cancelCatModalBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Category</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
