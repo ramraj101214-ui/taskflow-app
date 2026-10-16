@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
+  <script>document.documentElement.setAttribute('data-theme', 'dark');</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TaskFlow — Simple Task Manager</title>
-  <meta name="description" content="TaskFlow: A simple, fast task manager built with HTML, CSS, JavaScript, and Node.js with SQLite." />
-  
+  <meta name="description"
+    content="TaskFlow: A simple, fast task manager built with HTML, CSS, and vanilla JavaScript." />
+
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -14,13 +17,14 @@
   <!-- Stylesheet -->
   <link rel="stylesheet" href="styles.css" />
 </head>
+
 <body>
   <div class="app-container">
 
     <!-- Mobile Drawer Overlay -->
     <div class="mobile-overlay" id="mobileOverlay"></div>
 
-    <!-- 🏛️ Sidebar -->
+    <!-- 🏛️ Left Sidebar -->
     <aside class="sidebar" id="sidebar">
       <div class="brand">
         <div class="brand-logo">✓</div>
@@ -51,7 +55,7 @@
         </div>
         <nav class="cat-nav">
           <a href="#" class="cat-link active" data-category="All">
-            <span class="dot" style="background:#6366f1"></span>
+            <span class="dot" style="background:#8B5CF6"></span>
             <span class="cat-name">All Tasks</span>
             <span class="badge" id="catCountAll">0</span>
           </a>
@@ -68,19 +72,58 @@
     <main class="main-body">
       <!-- Header Bar -->
       <header class="header-bar">
+        <!-- Add inside header-actions in index.html -->
+
+        <button class="btn-secondary" id="themeToggleBtn" aria-label="Toggle theme">🌙</button>
+
         <div class="header-left">
           <button class="menu-toggle" id="mobileSidebarToggle" aria-label="Toggle menu">☰</button>
           <div>
-            <h1 id="pageTitle">Dashboard</h1>
-            <p class="subtitle">Keep track of your daily tasks and to-dos</p>
+            <h1 id="pageTitle">Tasks Today (0)</h1>
+            <p class="subtitle" id="greetingText">Good Evening, User</p>
           </div>
+        </div>
+        <div class="header-actions">
+          <button class="btn-icon" id="bellBtn" aria-label="Notifications">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M12 6v6l4 2"></path>
+            </svg>
+            <span class="dot"></span>
+          </button>
+          <button class="btn-icon" id="userBtn" aria-label="User profile">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2"></path>
+              <circle cx="10" cy="7" r="4"></circle>
+              <line x1="6" y2="13" x2="6.01" y2="13"></line>
+              <line x1="10" y2="13" x2="10.01" y2="13"></line>
+            </svg>
+          </button>
         </div>
         <button class="btn btn-primary" id="openModalBtn">+ Add Task</button>
       </header>
 
+      <!-- Right Sidebar (Stats & Progress) -->
+      <aside class="right-sidebar">
+        <div class="progress-box">
+          <div class="progress-header">
+            <span class="progress-label">Completion Rate</span>
+            <span class="progress-value" id="progressValue">0%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="progressBar" style="width: 0%"></div>
+          </div>
+        </div>
+      </aside>
+
       <!-- 🎛️ Controls (Search & Filters) -->
       <section class="controls-card">
         <div class="search-wrap">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
           <input type="text" id="searchInput" placeholder="Search tasks..." />
           <button id="clearSearchBtn" class="clear-btn" style="display:none;">&times;</button>
         </div>
@@ -203,7 +246,7 @@
         </div>
         <div class="form-field">
           <label for="catColorInput">Color Badge</label>
-          <input type="color" id="catColorInput" value="#6366f1" />
+          <input type="color" id="catColorInput" value="#8B5CF6" />
         </div>
         <div class="modal-actions">
           <button type="button" class="btn btn-secondary" id="cancelCatModalBtn">Cancel</button>
@@ -215,4 +258,5 @@
 
   <script src="app.js"></script>
 </body>
+
 </html>

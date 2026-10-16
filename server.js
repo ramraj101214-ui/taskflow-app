@@ -173,7 +173,7 @@ app.put('/api/tasks/:id', (req, res) => {
     }
 
     const title = req.body.title !== undefined ? req.body.title.trim() : existing.title;
-    const description = req.body.description !== undefined ? req.body.description : existing.description;
+    const description = req.body.description !== undefined ? req.body.description.trim() : existing.description;
     const category_id = req.body.category_id !== undefined ? (req.body.category_id ? Number(req.body.category_id) : null) : existing.category_id;
     const priority = req.body.priority !== undefined ? req.body.priority : existing.priority;
     const due_date = req.body.due_date !== undefined ? req.body.due_date : existing.due_date;

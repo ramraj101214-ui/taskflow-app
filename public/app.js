@@ -1,5 +1,6 @@
 /**
  * TaskFlow — Simple Client-side JavaScript
+ * Redesigned with pastel/purple accent theme, time-based greeting, and completion tracking
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -10,7 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
     categoryId: 'All',
     status: 'All',
     categories: [],
-    editingTaskId: null
+    editingTaskId: null,
+    totalTasks: 0
   };
 
   // DOM Elements
@@ -18,12 +20,13 @@ document.addEventListener('DOMContentLoaded', () => {
     taskList: document.getElementById('taskList'),
     emptyState: document.getElementById('emptyState'),
     resultsCount: document.getElementById('resultsCount'),
+    pageTitle: document.getElementById('pageTitle'),
     statTotal: document.getElementById('statTotal'),
     statPending: document.getElementById('statPending'),
     statCompleted: document.getElementById('statCompleted'),
     categoryListNav: document.getElementById('categoryListNav'),
     catCountAll: document.getElementById('catCountAll'),
-    pageTitle: document.getElementById('pageTitle'),
+    greetingText: document.getElementById('greetingText'),
 
     searchInput: document.getElementById('searchInput'),
     clearSearchBtn: document.getElementById('clearSearchBtn'),
@@ -52,13 +55,19 @@ document.addEventListener('DOMContentLoaded', () => {
     mobileOverlay: document.getElementById('mobileOverlay'),
     mobileSidebarToggle: document.getElementById('mobileSidebarToggle'),
 
+    progressBar: document.getElementById('progressBar'),
+    progressValue: document.getElementById('progressValue'),
+
     categoryModalBackdrop: document.getElementById('categoryModalBackdrop'),
     openAddCategoryBtn: document.getElementById('openAddCategoryBtn'),
     closeCatModalBtn: document.getElementById('closeCatModalBtn'),
     cancelCatModalBtn: document.getElementById('cancelCatModalBtn'),
     categoryForm: document.getElementById('categoryForm'),
     catNameInput: document.getElementById('catNameInput'),
-    catColorInput: document.getElementById('catColorInput')
+    catColorInput: document.getElementById('catColorInput'),
+
+    bellBtn: document.getElementById('bellBtn'),
+    userBtn: document.getElementById('userBtn')
   };
 
   function escapeHtml(str) {
@@ -66,6 +75,46 @@ document.addEventListener('DOMContentLoaded', () => {
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
+  }
+
+  // Display-only search (matches spec - display-only search bar)
+  let searchTimeout = null;
+  elements.searchInput.addEventListener('input', (e) => {
+    state.search = e.target.value;
+    elements.clearSearchBtn.style.display = state.search ? 'block' : 'none';
+
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      fetchTasks();
+    }, 250);
+  });
+
+  elements.clearSearchBtn.addEventListener('click', () => {
+    elements.searchInput.value = '';
+    state.search = '';
+    elements.clearSearchBtn.style.display = 'none';
+    fetchTasks();
+  });
+
+  // Greeting based on time of day
+  function getGreeting() {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 18) return 'Good Afternoon';
+    return 'Good Evening';
+  }
+
+  function updateGreeting() {
+    if (elements.greetingText) {
+      elements.greetingText.textContent = `${getGreeting()}, User`;
+    }
+  }
+
+  // Update title with task count
+  function updateTitleCount() {
+    if (elements.pageTitle) {
+      elements.pageTitle.textContent = `Tasks Today (${state.totalTasks})`;
+    }
   }
 
   // Fetch Categories
@@ -135,9 +184,24 @@ document.addEventListener('DOMContentLoaded', () => {
       const tasks = json.data || [];
       const stats = json.stats || { total: 0, pending: 0, completed: 0 };
 
+      state.totalTasks = stats.total;
+
+      // Update sidebar stats
       elements.statTotal.textContent = stats.total;
       elements.statPending.textContent = stats.pending;
       elements.statCompleted.textContent = stats.completed;
+
+      // Update progress bar / completion rate
+      const rate = stats.total === 0 ? 0 : (stats.completed / stats.total) * 100;
+      if (elements.progressBar) {
+        elements.progressBar.style.width = `${rate}%`;
+      }
+      if (elements.progressValue) {
+        elements.progressValue.textContent = `${rate.toFixed(0)}%`;
+      }
+
+      // Update title count
+      updateTitleCount();
 
       renderTaskGrid(tasks);
     } catch (err) {
@@ -145,6 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Render Task Grid
   function renderTaskGrid(tasks) {
     elements.taskList.innerHTML = '';
 
@@ -167,10 +232,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
       card.innerHTML = `
         <div class="task-card-top">
-          <input 
-            type="checkbox" 
-            class="chk-input" 
-            ${isDone ? 'checked' : ''} 
+          <input
+            type="checkbox"
+            class="chk-input"
+            ${isDone ? 'checked' : ''}
             data-id="${task.id}"
           />
           <div class="task-content">
@@ -196,7 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.taskList.appendChild(fragment);
   }
 
-  // Delegated Event Handlers (Bound once, avoiding repeated listener registration)
+  // Delegated Event Handlers
   elements.taskList.addEventListener('change', async (e) => {
     const chk = e.target.closest('.chk-input');
     if (!chk) return;
@@ -282,15 +347,22 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Submit Task Form
+
+  // Submit Task Form
   elements.taskForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const title = elements.taskTitleInput.value.trim();
-    if (!title) return;
+
+    if (!title) {
+      alert('Please enter a task title.');
+      elements.taskTitleInput.focus();
+      return;
+    }
 
     const payload = {
       title,
-      description: elements.taskDescInput.value.trim() || null,
+      description: elements.taskDescInput.value.trim(),
       category_id: elements.taskCategorySelect.value || null,
       priority: elements.taskPrioritySelect.value,
       due_date: elements.taskDueDateInput.value || null
@@ -301,18 +373,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const method = state.editingTaskId ? 'PUT' : 'POST';
-    const url = state.editingTaskId ? `/api/tasks/${state.editingTaskId}` : '/api/tasks';
+    const url = state.editingTaskId
+      ? `/api/tasks/${state.editingTaskId}`
+      : '/api/tasks';
 
-    await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
 
-    closeModal();
-    await fetchTasks();
-    await fetchCategories();
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(result.error || `Request failed (${response.status})`);
+      }
+
+      if (!result.data) {
+        throw new Error('The server did not return the saved task.');
+      }
+
+      closeModal();
+      await fetchTasks();
+      await fetchCategories();
+    } catch (error) {
+      console.error('Task save failed:', error);
+      alert(`Task could not be saved: ${error.message}`);
+    }
   });
+
 
   elements.openModalBtn.addEventListener('click', openAddTaskModal);
   elements.emptyAddBtn.addEventListener('click', openAddTaskModal);
@@ -323,25 +413,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target === elements.taskModalBackdrop) closeModal();
   });
 
-  // Search & Filters
-  let searchTimeout = null;
-  elements.searchInput.addEventListener('input', (e) => {
-    state.search = e.target.value;
-    elements.clearSearchBtn.style.display = state.search ? 'block' : 'none';
-
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => {
-      fetchTasks();
-    }, 250);
-  });
-
-  elements.clearSearchBtn.addEventListener('click', () => {
-    elements.searchInput.value = '';
-    state.search = '';
-    elements.clearSearchBtn.style.display = 'none';
-    fetchTasks();
-  });
-
+  // Filters
   elements.priorityFilter.addEventListener('change', (e) => {
     state.priority = e.target.value;
     fetchTasks();
@@ -364,7 +436,7 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchTasks();
   }
 
-  // Status Filter Tabs (Delegated)
+  // Status Filter Tabs
   elements.statusFilter.addEventListener('click', (e) => {
     const tab = e.target.closest('.tab');
     if (!tab || tab.classList.contains('active')) return;
@@ -415,6 +487,22 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.mobileOverlay.classList.remove('active');
   });
 
+  // Bell & User icons (display only as per spec)
+  elements.bellBtn.addEventListener('click', () => {
+    alert('No new notifications');
+  });
+
+  elements.userBtn.addEventListener('click', () => {
+    alert('User Profile');
+  });
+
+  // Theme init - dark mode default
+  const savedTheme = localStorage.getItem('taskflow-theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+
+  // Initialize
+  updateGreeting();
+  updateTitleCount();
   fetchCategories();
   fetchTasks();
 });
