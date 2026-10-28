@@ -49,6 +49,27 @@
   padding: 0;
 }
 
+/* Smooth theme color changes; reduced-motion preferences are respected below. */
+body,
+.sidebar,
+.surface-card,
+.controls-card,
+.task-card,
+.modal-box,
+.right-sidebar,
+input,
+select,
+textarea,
+.stats-box,
+.progress-box,
+.header-bar {
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
 body {
   font-family: Inter, system-ui, -apple-system, sans-serif;
   background-color: var(--bg-base);

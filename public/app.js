@@ -67,7 +67,8 @@ document.addEventListener('DOMContentLoaded', () => {
     catColorInput: document.getElementById('catColorInput'),
 
     bellBtn: document.getElementById('bellBtn'),
-    userBtn: document.getElementById('userBtn')
+    userBtn: document.getElementById('userBtn'),
+    themeToggleBtn: document.getElementById('themeToggleBtn')
   };
 
   function escapeHtml(str) {
@@ -496,9 +497,34 @@ document.addEventListener('DOMContentLoaded', () => {
     alert('User Profile');
   });
 
-  // Theme init - dark mode default
+  // Theme init - restore saved preference, defaulting to dark mode
   const savedTheme = localStorage.getItem('taskflow-theme') || 'dark';
   document.documentElement.setAttribute('data-theme', savedTheme);
+
+  function updateThemeToggleLabel(theme) {
+    if (!elements.themeToggleBtn) return;
+    elements.themeToggleBtn.textContent = theme === 'dark' ? '🌙' : '☀️';
+    elements.themeToggleBtn.setAttribute(
+      'aria-label',
+      `Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`
+    );
+    elements.themeToggleBtn.setAttribute(
+      'title',
+      `Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`
+    );
+  }
+
+  updateThemeToggleLabel(savedTheme);
+
+  if (elements.themeToggleBtn) {
+    elements.themeToggleBtn.addEventListener('click', () => {
+      const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('taskflow-theme', newTheme);
+      updateThemeToggleLabel(newTheme);
+    });
+  }
 
   // Initialize
   updateGreeting();
